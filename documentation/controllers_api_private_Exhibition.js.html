@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controllers/api/private/Exhibition.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controllers/api/private/Exhibition.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const ExhibitionService = require('./../../../services/Exhibition');
+const { verifyId } = require('./../../../utils/MongoUtils');
+
+/**
+ * Controlador utilizado para la creación, actualización y eliminación de exhibiciones
+ */
+const ExhibitionController = {};
+
+/**
+ * Creación de exhibiciones
+ * Esta función verifica que todos los campos requiriridos esten contenidos en el 
+ * objeto recibido en la petición. Si la verificaión falla el servidor responde con
+ * un código 400. Si la verificación es correcta se verifica si ya existe una exhibición
+ * con el nombre indicado en la petición para evitar la duplicación de nombres, en caso
+ * de exisitir duplicidad el servidor responde con un código 403. Si el nombre de la 
+ * exhibición no ha sido utilizado se crea la exhibición, si la base de datos no puede 
+ * ser accedida por algún motivo el servidor responde con un código 503. Finalmente si
+ * todo es exitoso el servidor responde con un código 201 y el objeto de la exhibición
+ * creada.
+ * 
+ * @param {Object} petición realizada al servidor
+ * @param {Object} respuesta a la petición realizada
+ */
+ExhibitionController.addNewExhibition = async (req, res) => {
+  const fieldsValidation = ExhibitionService.verifyFields(req.body);
+
+  if (!fieldsValidation.success) {
+    return res.status(400).json(fieldsValidation.content);
+  }
+
+  try {
+    const exhibitionExists = await ExhibitionService.findOneByName(req.body);
+    if (exhibitionExists.success) {
+      return res.status(403).json({
+        error: 'Exhibition with indicated name already exists.'
+      });
+    }
+    
+    const exhibitionCreated = await ExhibitionService.create(req.body);
+
+    if (!exhibitionCreated.success) {
+      return res.status(503).json(exhibitionCreated.content);
+    }
+
+    return res.status(201).json(exhibitionCreated.content);
+  } catch(error) {
+    return res.status(500).json({
+      error: 'Internal Server Error'
+    });
+  }
+}
+
+/**
+ * Actualizar exhibición
+ * Esta función verifica que el _id proveído como parámetro en la ruta sea válido,
+ * sino el servidor responde con un código 400. Si la verificación es exitosa se 
+ * verifica que haya al menos un campo a actualizar sino hay ninguno el servidor
+ * responde con un código 400. Si la verificación es exitosa se procede a verificar
+ * que haya en la base de datos una exhibición con el _id indicado, si no existe el 
+ * servidor responde con un código 404. Si el objeto existe en la base de datos se
+ * procede a actualizarlo, pero si la base de datos no está disponible el servidor
+ * responde con un código 503. En caso que la base de datos esté disponible y la 
+ * acción se completa el servidor responde con un código 200 y el objeto actualizado
+ * 
+ * @param {Object} petición realizada al servidor
+ * @param {Object} respuesta a la petición realizada
+ */
+ExhibitionController.update = async (req, res) => {
+  const { _id } = req.params;
+
+  if (!verifyId(_id)) {
+    return res.status(400).json({
+      error: 'Invalid id.'
+    });
+  }
+
+  const verifiedFields = ExhibitionService.verifyUpdate(req.body);
+
+  if (!verifiedFields.success) {
+    return res.status(400).json(verifiedFields.content);
+  }
+
+  try {
+    const exhibitionExists = await ExhibitionService.findOneById(_id);
+    if (!exhibitionExists.success) {
+      return res.status(404).json(exhibitionExists.content);
+    }
+
+    const exhibitionUpdated = await ExhibitionService.updateOneById(exhibitionExists.content, verifiedFields.content);
+    if (!exhibitionUpdated.success) {
+      return res.status(503).json(exhibitionUpdated.content);
+    }
+
+    return res.status(200).json(exhibitionUpdated.content);
+  } catch(error) {
+    return res.status(500).json({
+      error: 'Internal Server Error.'
+    })
+  }
+}
+
+/**
+ * Eliminar exhibición
+ * Esta función verifica que el _id proveído como parámetro en la ruta sea válido,
+ * sino el servidor responde con un código 400. Si la verificación es exitosa se 
+ * procede a verificar que haya en la base de datos una exhibición con el _id indicado,
+ * si no existe el servidor responde con un código 404. Si el objeto existe en la base
+ * de datos se procede a eliminarlo, pero si la base de datos no está disponible el 
+ * serivodor responde con un código 503. En caso que la base de datos esté disponible 
+ * y la acción se completa el servidor responde con un código 204 y un objeto vacío.
+ * 
+ * @param {Object} petición realizada al servidor
+ * @param {Object} respuesta a la petición realizada
+ */
+ExhibitionController.remove = async (req, res) => {
+  try {
+    const exhibition = await ExhibitionService.findOneById(req.params._id);
+    if (!exhibition.success) {
+      return res.status(404).json(exhibition.content);
+    }
+    const exhibitionDeleted = await ExhibitionService.remove(req.params._id);
+    if (!exhibitionDeleted.success) {
+      return res.status(503).json(exhibitionDeleted.content);
+    }
+
+    return res.status(204).json(exhibitionDeleted.content);
+  } catch(error) {
+    return res.status(500).json({
+      error: 'Internal Server Error.'
+    });
+  }
+}
+
+module.exports = ExhibitionController;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AuthController">AuthController</a></li><li><a href="global.html#EducationAreaController">EducationAreaController</a></li><li><a href="global.html#EducationAreaSchema">EducationAreaSchema</a></li><li><a href="global.html#EducationAreaService">EducationAreaService</a></li><li><a href="global.html#ExhibitionController">ExhibitionController</a></li><li><a href="global.html#ExhibitionRoomController">ExhibitionRoomController</a></li><li><a href="global.html#ExhibitionRoomSchema">ExhibitionRoomSchema</a></li><li><a href="global.html#ExhibitionRoomService">ExhibitionRoomService</a></li><li><a href="global.html#ExhibitionSchema">ExhibitionSchema</a></li><li><a href="global.html#ExhibitionService">ExhibitionService</a></li><li><a href="global.html#FAQController">FAQController</a></li><li><a href="global.html#FAQSchema">FAQSchema</a></li><li><a href="global.html#FAQService">FAQService</a></li><li><a href="global.html#RecommendationController">RecommendationController</a></li><li><a href="global.html#RecommendationSchema">RecommendationSchema</a></li><li><a href="global.html#RecommendationService">RecommendationService</a></li><li><a href="global.html#RecommendedWebsiteController">RecommendedWebsiteController</a></li><li><a href="global.html#RecommendedWebsiteSchema">RecommendedWebsiteSchema</a></li><li><a href="global.html#RecommendedWebsiteService">RecommendedWebsiteService</a></li><li><a href="global.html#SuggestionController">SuggestionController</a></li><li><a href="global.html#SuggestionSchema">SuggestionSchema</a></li><li><a href="global.html#SuggestionService">SuggestionService</a></li><li><a href="global.html#SuggestionTypeController">SuggestionTypeController</a></li><li><a href="global.html#SuggestionTypeSchema">SuggestionTypeSchema</a></li><li><a href="global.html#SuggestionTypeService">SuggestionTypeService</a></li><li><a href="global.html#UserSchema">UserSchema</a></li><li><a href="global.html#UserService">UserService</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Mon Feb 15 2021 14:40:37 GMT-0600 (GMT-06:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

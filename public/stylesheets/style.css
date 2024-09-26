@@ -1,0 +1,16 @@
+body {
+  font-family: 'Montserrat', sans-serif;
+  text-transform: uppercase;
+}
+
+nav div a img {
+  height: 100%;
+}
+
+body {
+  align-items: center;
+}
+
+#screen-picture {
+  height: 90%;
+}
