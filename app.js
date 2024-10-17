@@ -1,11 +1,10 @@
 const express = require('express');
-const serverless = require('serverless-http');
 const swaggerUI = require('swagger-ui-express');
 const swaggerDoc = require('./swagger.json');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const cors = require('cors');
+const cors = require('cors')
 
 const AuthMiddleware = require('./middlewares/Auth');
 
@@ -27,6 +26,7 @@ app.use(function(req, res, next) {
   next();
 });
 
+
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDoc));
 app.use(logger('dev'));
 app.use(express.json());
@@ -34,12 +34,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/ping', (req, res) => {
+  res.json({ message: 'pong' });
+});
+
 app.use('/api', apiRouter);
 app.use(AuthMiddleware.verifyAuth);
 app.use('/api', apiPrivateRouter);
 
-// Export regular app for local development
 module.exports = app;
-
-// Export serverless app for Netlify
-module.exports.handler = serverless(app);
